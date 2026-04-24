@@ -6,6 +6,16 @@ body {
   padding: 0;
 }
 
+/* Reusable text-hover hook: apply .hover-hook to any text element. */
+.hover-hook {
+  display: inline-block;
+}
+
+/* Name-specific hook variant. */
+.hover-hook--name {
+  letter-spacing: 0.02em;
+}
+
 header {
   text-align: center;
   padding: 3rem 0;
@@ -30,7 +40,7 @@ header {
   counter-increment: annotation;
   display: grid;
   grid-template-columns: 3.5rem 1fr;
-  gap: 0.1rem;
+  gap: 0.2rem;
   align-items: baseline;
   margin: 0.6rem 0;
 }
