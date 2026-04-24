@@ -1,0 +1,58 @@
+body {
+  background-color: #181818;
+  color: #eaeaea;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.project-box {
+  width: 500px;
+  margin: 0 auto;
+  background: #1f1f1f;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.annotation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: annotation -1;
+}
+
+.annotation-list li {
+  counter-increment: annotation;
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 0.1rem;
+  align-items: baseline;
+  margin: 0.6rem 0;
+}
+
+.annotation-list li::before {
+  content: "00" counter(annotation);
+  font-variant-numeric: tabular-nums;
+  color: #9aa0a6;
+}
+
+.annotation-list li:nth-child(n + 10)::before {
+  content: "0" counter(annotation);
+}
+
+.annotation-list li:nth-child(n + 100)::before {
+  content: counter(annotation);
+}
+
+.project-box a,
+.project-box a:visited,
+.project-box a:hover,
+.project-box a:active {
+  color: inherit;
+  text-decoration: none;
+}
