@@ -129,15 +129,29 @@ header {
 }
 
 .strategy-button {
-  appearance: none;
   border: 2px solid #eaeaea;
   background: #181818;
   color: #eaeaea;
   font: inherit;
+  border-radius: 6px;
+}
+
+.strategy-button,
+.strategy-switch,
+.strategy-slider {
+  color: #eaeaea;
+  background: #181818;
+  border: 2px solid #eaeaea;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.strategy-button,
+.strategy-switch {
+  appearance: none;
+  cursor: pointer;
   text-align: left;
   padding: 0.85rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
@@ -156,15 +170,6 @@ header {
 }
 
 .strategy-switch {
-  appearance: none;
-  border: 2px solid #eaeaea;
-  background: #181818;
-  color: #eaeaea;
-  font: inherit;
-  text-align: left;
-  padding: 0.85rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
   display: flex;
   align-items: center;
@@ -228,8 +233,6 @@ header {
   flex-direction: column;
   gap: 0.45rem;
   padding: 0.85rem 1rem;
-  border: 2px solid #eaeaea;
-  border-radius: 6px;
 }
 
 .strategy-slider__label {

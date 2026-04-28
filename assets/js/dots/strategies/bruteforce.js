@@ -1,8 +1,4 @@
-function distanceSquared(left, right) {
-    const deltaX = left.x - right.x;
-    const deltaY = left.y - right.y;
-    return deltaX * deltaX + deltaY * deltaY;
-}
+import { addNeighborPair, distanceSquared, recordCheck, toNeighborPairs } from "../strategy-utils.js";
 
 function getNearestConnections(dots, options = {}) {
     const connections = [];
@@ -22,7 +18,7 @@ function getNearestConnections(dots, options = {}) {
             }
 
             distanceChecks += 1;
-            checks.push({ sourceIndex, targetIndex });
+            recordCheck(checks, sourceIndex, targetIndex);
             const distance = distanceSquared(dots[sourceIndex], dots[targetIndex]);
 
             if (distance > maxDistanceSquared) {
@@ -30,9 +26,7 @@ function getNearestConnections(dots, options = {}) {
             }
 
             // add unordered neighbor pair
-            const a = Math.min(sourceIndex, targetIndex);
-            const b = Math.max(sourceIndex, targetIndex);
-            neighborPairs.add(`${a}:${b}`);
+            addNeighborPair(neighborPairs, sourceIndex, targetIndex);
 
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -45,10 +39,7 @@ function getNearestConnections(dots, options = {}) {
         }
     }
 
-    const neighbors = Array.from(neighborPairs).map(key => {
-        const [a, b] = key.split(":").map(Number);
-        return { sourceIndex: a, targetIndex: b };
-    });
+    const neighbors = toNeighborPairs(neighborPairs);
 
     return {
         connections,

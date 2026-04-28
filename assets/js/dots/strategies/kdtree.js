@@ -4,6 +4,16 @@ function distanceSquared(left, right) {
     return deltaX * deltaX + deltaY * deltaY;
 }
 
+const MAX_CHECKS = 400;
+
+function recordCheck(checks, sourceIndex, targetIndex) {
+    if (checks.length >= MAX_CHECKS) {
+        checks.length = 0;
+    }
+
+    checks.push({ sourceIndex, targetIndex });
+}
+
 function buildTree(points, depth = 0) {
     if (points.length === 0) {
         return null;
@@ -83,7 +93,7 @@ function getNearestConnections(dots, options = {}) {
 
         if (nodePoint.index !== targetIndex) {
             distanceChecks += 1;
-            checks.push({ sourceIndex: targetPoint.index, targetIndex: nodePoint.index });
+            recordCheck(checks, targetPoint.index, nodePoint.index);
             const distance = distanceSquared(targetPoint, nodePoint);
 
             if (distance <= maxDistanceSquared) {
