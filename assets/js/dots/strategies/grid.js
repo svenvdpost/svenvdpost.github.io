@@ -71,9 +71,9 @@ function getNearestConnections(dots, options = {}) {
         const column = getCellIndex(source.x, cellSize);
         const row = getCellIndex(source.y, cellSize);
         const candidateIndices = collectCandidateIndices(grid, column, row, searchRadius).filter(index => index !== sourceIndex);
-
         let bestTargetIndex = -1;
         let bestDistance = Number.POSITIVE_INFINITY;
+        const neighborPairs = new Set();
 
         for (const targetIndex of candidateIndices) {
             distanceChecks += 1;
@@ -83,6 +83,10 @@ function getNearestConnections(dots, options = {}) {
             if (distance > neighborDistance * neighborDistance) {
                 continue;
             }
+
+            const a = Math.min(sourceIndex, targetIndex);
+            const b = Math.max(sourceIndex, targetIndex);
+            neighborPairs.add(`${a}:${b}`);
 
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -104,6 +108,10 @@ function getNearestConnections(dots, options = {}) {
                     continue;
                 }
 
+                const a = Math.min(sourceIndex, targetIndex);
+                const b = Math.max(sourceIndex, targetIndex);
+                neighborPairs.add(`${a}:${b}`);
+
                 if (distance < bestDistance) {
                     bestDistance = distance;
                     bestTargetIndex = targetIndex;
@@ -114,10 +122,26 @@ function getNearestConnections(dots, options = {}) {
         if (bestTargetIndex !== -1) {
             connections.push({ sourceIndex, targetIndex: bestTargetIndex });
         }
+
+        // merge neighborPairs into a top-level set stored on the grid loop
+        if (!globalThis.__grid_neighbor_pairs__) {
+            globalThis.__grid_neighbor_pairs__ = new Set();
+        }
+        neighborPairs.forEach(k => globalThis.__grid_neighbor_pairs__.add(k));
     }
+
+    const neighborsSet = globalThis.__grid_neighbor_pairs__ || new Set();
+    const neighbors = Array.from(neighborsSet).map(key => {
+        const [a, b] = key.split(":").map(Number);
+        return { sourceIndex: a, targetIndex: b };
+    });
+
+    // clear temporary global
+    delete globalThis.__grid_neighbor_pairs__;
 
     return {
         connections,
+        neighbors,
         distanceChecks,
         checks,
     };

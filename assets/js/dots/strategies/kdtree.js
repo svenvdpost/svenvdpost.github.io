@@ -74,11 +74,10 @@ function getNearestConnections(dots, options = {}) {
     let distanceChecks = 0;
     const neighborDistance = Number(options.neighborDistance || Number.POSITIVE_INFINITY);
     const maxDistanceSquared = neighborDistance * neighborDistance;
+    const neighborsSet = new Set();
 
-    function searchNearestWithCount(node, targetPoint, targetIndex, best) {
-        if (!node) {
-            return best;
-        }
+    function searchRange(node, targetPoint, targetIndex, best) {
+        if (!node) return best;
 
         const nodePoint = node.point;
 
@@ -87,15 +86,14 @@ function getNearestConnections(dots, options = {}) {
             checks.push({ sourceIndex: targetPoint.index, targetIndex: nodePoint.index });
             const distance = distanceSquared(targetPoint, nodePoint);
 
-            if (distance > maxDistanceSquared) {
-                return best;
-            }
+            if (distance <= maxDistanceSquared) {
+                const a = Math.min(targetIndex, nodePoint.index);
+                const b = Math.max(targetIndex, nodePoint.index);
+                neighborsSet.add(`${a}:${b}`);
 
-            if (distance < best.distance) {
-                best = {
-                    index: nodePoint.index,
-                    distance,
-                };
+                if (distance < best.distance) {
+                    best = { index: nodePoint.index, distance };
+                }
             }
         }
 
@@ -105,28 +103,35 @@ function getNearestConnections(dots, options = {}) {
         const firstBranch = targetValue < nodeValue ? node.left : node.right;
         const secondBranch = targetValue < nodeValue ? node.right : node.left;
 
-        best = searchNearestWithCount(firstBranch, targetPoint, targetIndex, best);
+        best = searchRange(firstBranch, targetPoint, targetIndex, best);
 
-        if ((targetValue - nodeValue) * (targetValue - nodeValue) < Math.min(best.distance, maxDistanceSquared)) {
-            best = searchNearestWithCount(secondBranch, targetPoint, targetIndex, best);
+        const diff = targetValue - nodeValue;
+        if (diff * diff <= maxDistanceSquared) {
+            best = searchRange(secondBranch, targetPoint, targetIndex, best);
         }
 
         return best;
     }
 
     points.forEach(point => {
-        const nearest = searchNearestWithCount(tree, point, point.index, {
+        const best = searchRange(tree, point, point.index, {
             index: -1,
             distance: Number.POSITIVE_INFINITY,
         });
 
-        if (nearest.index !== -1) {
-            connections.push({ sourceIndex: point.index, targetIndex: nearest.index });
+        if (best.index !== -1) {
+            connections.push({ sourceIndex: point.index, targetIndex: best.index });
         }
+    });
+
+    const neighbors = Array.from(neighborsSet).map(key => {
+        const [a, b] = key.split(":").map(Number);
+        return { sourceIndex: a, targetIndex: b };
     });
 
     return {
         connections,
+        neighbors,
         distanceChecks,
         checks,
     };

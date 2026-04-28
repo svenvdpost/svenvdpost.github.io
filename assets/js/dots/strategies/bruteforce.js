@@ -10,6 +10,7 @@ function getNearestConnections(dots, options = {}) {
     let distanceChecks = 0;
     const neighborDistance = Number(options.neighborDistance || Number.POSITIVE_INFINITY);
     const maxDistanceSquared = neighborDistance * neighborDistance;
+    const neighborPairs = new Set();
 
     for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
         let bestTargetIndex = -1;
@@ -28,6 +29,11 @@ function getNearestConnections(dots, options = {}) {
                 continue;
             }
 
+            // add unordered neighbor pair
+            const a = Math.min(sourceIndex, targetIndex);
+            const b = Math.max(sourceIndex, targetIndex);
+            neighborPairs.add(`${a}:${b}`);
+
             if (distance < bestDistance) {
                 bestDistance = distance;
                 bestTargetIndex = targetIndex;
@@ -39,8 +45,14 @@ function getNearestConnections(dots, options = {}) {
         }
     }
 
+    const neighbors = Array.from(neighborPairs).map(key => {
+        const [a, b] = key.split(":").map(Number);
+        return { sourceIndex: a, targetIndex: b };
+    });
+
     return {
         connections,
+        neighbors,
         distanceChecks,
         checks,
     };
