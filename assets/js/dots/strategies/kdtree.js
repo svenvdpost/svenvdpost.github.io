@@ -54,11 +54,12 @@ function searchNearest(node, targetPoint, targetIndex, best) {
     return best;
 }
 
-function getNearestConnections(dots) {
+function getNearestConnections(dots, options = {}) {
     if (dots.length < 2) {
         return {
             connections: [],
             distanceChecks: 0,
+            checks: [],
         };
     }
 
@@ -69,7 +70,10 @@ function getNearestConnections(dots) {
     }));
     const tree = buildTree(points);
     const connections = [];
+    const checks = [];
     let distanceChecks = 0;
+    const neighborDistance = Number(options.neighborDistance || Number.POSITIVE_INFINITY);
+    const maxDistanceSquared = neighborDistance * neighborDistance;
 
     function searchNearestWithCount(node, targetPoint, targetIndex, best) {
         if (!node) {
@@ -80,7 +84,12 @@ function getNearestConnections(dots) {
 
         if (nodePoint.index !== targetIndex) {
             distanceChecks += 1;
+            checks.push({ sourceIndex: targetPoint.index, targetIndex: nodePoint.index });
             const distance = distanceSquared(targetPoint, nodePoint);
+
+            if (distance > maxDistanceSquared) {
+                return best;
+            }
 
             if (distance < best.distance) {
                 best = {
@@ -98,7 +107,7 @@ function getNearestConnections(dots) {
 
         best = searchNearestWithCount(firstBranch, targetPoint, targetIndex, best);
 
-        if ((targetValue - nodeValue) * (targetValue - nodeValue) < best.distance) {
+        if ((targetValue - nodeValue) * (targetValue - nodeValue) < Math.min(best.distance, maxDistanceSquared)) {
             best = searchNearestWithCount(secondBranch, targetPoint, targetIndex, best);
         }
 
@@ -119,6 +128,7 @@ function getNearestConnections(dots) {
     return {
         connections,
         distanceChecks,
+        checks,
     };
 }
 

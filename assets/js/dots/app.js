@@ -50,13 +50,38 @@ function generateRandomDots(count, width, height) {
 function createDotsApp({ canvas, strategyButtons, rightPanel }) {
     const ctx = canvas.getContext("2d");
     const defaultStrategyKey = strategyButtons[0]?.dataset.strategy || getStrategyKeys()[0];
+    const neighborDistanceSlider = document.querySelector("[data-neighbor-distance-slider]");
+    const neighborDistanceValueNode = document.querySelector("[data-neighbor-distance-value]");
 
     let activeStrategy = null;
     let selectedStrategyKey = defaultStrategyKey;
     let dots = [];
     let lastDistanceChecks = 0;
+    let lastChecks = [];
+    let showDistanceChecks = false;
+    let neighborDistance = Number(neighborDistanceSlider?.value || 120);
     let strategyTimeNode = null;
     let strategyInfoNode = null;
+    let strategyToggleNode = null;
+
+    function updateNeighborDistanceLabel() {
+        if (neighborDistanceValueNode) {
+            neighborDistanceValueNode.textContent = `${neighborDistance}`;
+        }
+    }
+
+    function initializeNeighborDistanceSlider() {
+        updateNeighborDistanceLabel();
+
+        if (!neighborDistanceSlider) {
+            return;
+        }
+
+        neighborDistanceSlider.addEventListener("input", () => {
+            neighborDistance = Number(neighborDistanceSlider.value);
+            updateNeighborDistanceLabel();
+        });
+    }
 
     function clearCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -95,6 +120,65 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
         ctx.restore();
     }
 
+    function drawNeighborLinks() {
+        const maxDistanceSquared = neighborDistance * neighborDistance;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(234, 234, 234, 0.12)";
+        ctx.lineWidth = 1;
+
+        for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
+            for (let targetIndex = sourceIndex + 1; targetIndex < dots.length; targetIndex++) {
+                const distance = distanceSquared(dots[sourceIndex], dots[targetIndex]);
+
+                if (distance > maxDistanceSquared) {
+                    continue;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(dots[sourceIndex].x, dots[sourceIndex].y);
+                ctx.lineTo(dots[targetIndex].x, dots[targetIndex].y);
+                ctx.stroke();
+            }
+        }
+
+        ctx.restore();
+    }
+
+    function drawDistanceChecks(checks) {
+        if (!showDistanceChecks || !checks.length) {
+            return;
+        }
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 74, 74, 0.12)";
+        ctx.lineWidth = 1;
+
+        checks.forEach(check => {
+            const source = dots[check.sourceIndex];
+            const target = dots[check.targetIndex];
+
+            if (!source || !target) {
+                return;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(source.x, source.y);
+            ctx.lineTo(target.x, target.y);
+            ctx.stroke();
+        });
+
+        ctx.restore();
+    }
+
+    function drawOverlay() {
+        if (typeof activeStrategy?.renderOverlay !== "function") {
+            return;
+        }
+
+        activeStrategy.renderOverlay(ctx, canvas, dots);
+    }
+
     function renderRightPanel() {
         rightPanel.innerHTML = `
             <div class="strategy-panel">
@@ -103,11 +187,25 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
                     <span class="strategy-diagnostic__label">Distance checks</span>
                     <strong class="strategy-diagnostic__value" data-strategy-time>0</strong>
                 </div>
+                <button type="button" class="strategy-switch" data-distance-checks-toggle role="switch" aria-checked="false">
+                    <span class="strategy-switch__label">Distance checks</span>
+                    <span class="strategy-switch__track" aria-hidden="true">
+                        <span class="strategy-switch__thumb"></span>
+                    </span>
+                </button>
             </div>
         `;
 
         strategyInfoNode = rightPanel.querySelector("[data-strategy-info]");
         strategyTimeNode = rightPanel.querySelector("[data-strategy-time]");
+        strategyToggleNode = rightPanel.querySelector("[data-distance-checks-toggle]");
+
+        if (strategyToggleNode) {
+            strategyToggleNode.addEventListener("click", () => {
+                showDistanceChecks = !showDistanceChecks;
+                strategyToggleNode.setAttribute("aria-checked", String(showDistanceChecks));
+            });
+        }
 
         if (!activeStrategy?.renderPanel || !strategyInfoNode) {
             if (strategyInfoNode) {
@@ -120,6 +218,7 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
             dots,
             canvas,
             selectedStrategyKey,
+            neighborDistance,
         });
     }
 
@@ -129,6 +228,14 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
         }
 
         strategyTimeNode.textContent = `${lastDistanceChecks}`;
+    }
+
+    function updateToggleState() {
+        if (!strategyToggleNode) {
+            return;
+        }
+
+        strategyToggleNode.setAttribute("aria-checked", String(showDistanceChecks));
     }
 
     function syncButtonState() {
@@ -148,18 +255,23 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
 
         activeStrategy = await loadStrategy(strategyKey);
         renderRightPanel();
+        updateToggleState();
     }
 
     function animate() {
         clearCanvas();
 
         const strategyResult = activeStrategy?.getNearestConnections
-            ? activeStrategy.getNearestConnections(dots)
-            : { connections: [], distanceChecks: 0 };
+            ? activeStrategy.getNearestConnections(dots, { neighborDistance })
+            : { connections: [], distanceChecks: 0, checks: [] };
 
         const connections = strategyResult.connections || [];
         lastDistanceChecks = strategyResult.distanceChecks || 0;
+        lastChecks = strategyResult.checks || [];
 
+        drawOverlay();
+        drawNeighborLinks();
+        drawDistanceChecks(lastChecks);
         drawConnections(connections);
         updateDiagnostics();
 
@@ -173,6 +285,8 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
     }
 
     async function start() {
+        initializeNeighborDistanceSlider();
+
         strategyButtons.forEach(button => {
             button.addEventListener("click", () => {
                 void setStrategy(button.dataset.strategy);

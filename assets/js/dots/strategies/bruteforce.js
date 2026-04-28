@@ -4,9 +4,12 @@ function distanceSquared(left, right) {
     return deltaX * deltaX + deltaY * deltaY;
 }
 
-function getNearestConnections(dots) {
+function getNearestConnections(dots, options = {}) {
     const connections = [];
+    const checks = [];
     let distanceChecks = 0;
+    const neighborDistance = Number(options.neighborDistance || Number.POSITIVE_INFINITY);
+    const maxDistanceSquared = neighborDistance * neighborDistance;
 
     for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
         let bestTargetIndex = -1;
@@ -18,7 +21,12 @@ function getNearestConnections(dots) {
             }
 
             distanceChecks += 1;
+            checks.push({ sourceIndex, targetIndex });
             const distance = distanceSquared(dots[sourceIndex], dots[targetIndex]);
+
+            if (distance > maxDistanceSquared) {
+                continue;
+            }
 
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -34,6 +42,7 @@ function getNearestConnections(dots) {
     return {
         connections,
         distanceChecks,
+        checks,
     };
 }
 

@@ -49,31 +49,40 @@ function collectCandidateIndices(grid, column, row, searchRadius) {
     return Array.from(candidates);
 }
 
-function getNearestConnections(dots) {
+function getNearestConnections(dots, options = {}) {
     if (dots.length < 2) {
         return {
             connections: [],
             distanceChecks: 0,
+            checks: [],
         };
     }
 
-    const cellSize = 80;
+    const cellSize = 50;
+    const neighborDistance = Number(options.neighborDistance || 120);
+    const searchRadius = Math.max(1, Math.ceil(neighborDistance / cellSize));
     const grid = buildGrid(dots, cellSize);
     const connections = [];
+    const checks = [];
     let distanceChecks = 0;
 
     for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
         const source = dots[sourceIndex];
         const column = getCellIndex(source.x, cellSize);
         const row = getCellIndex(source.y, cellSize);
-        const candidateIndices = collectCandidateIndices(grid, column, row, 1).filter(index => index !== sourceIndex);
+        const candidateIndices = collectCandidateIndices(grid, column, row, searchRadius).filter(index => index !== sourceIndex);
 
         let bestTargetIndex = -1;
         let bestDistance = Number.POSITIVE_INFINITY;
 
         for (const targetIndex of candidateIndices) {
             distanceChecks += 1;
+            checks.push({ sourceIndex, targetIndex });
             const distance = distanceSquared(source, dots[targetIndex]);
+
+            if (distance > neighborDistance * neighborDistance) {
+                continue;
+            }
 
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -88,7 +97,12 @@ function getNearestConnections(dots) {
                 }
 
                 distanceChecks += 1;
+                checks.push({ sourceIndex, targetIndex });
                 const distance = distanceSquared(source, dots[targetIndex]);
+
+                if (distance > neighborDistance * neighborDistance) {
+                    continue;
+                }
 
                 if (distance < bestDistance) {
                     bestDistance = distance;
@@ -105,7 +119,32 @@ function getNearestConnections(dots) {
     return {
         connections,
         distanceChecks,
+        checks,
     };
+}
+
+function renderOverlay(ctx, canvas) {
+    const cellSize = 50;
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(234, 234, 234, 0.15)";
+    ctx.lineWidth = 1;
+
+    for (let x = cellSize; x < canvas.width; x += cellSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = cellSize; y < canvas.height; y += cellSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    ctx.restore();
 }
 
 function renderPanel(panelRoot) {
@@ -119,5 +158,6 @@ export default {
     key: "grid",
     label: "Grid search",
     renderPanel,
+    renderOverlay,
     getNearestConnections,
 };
