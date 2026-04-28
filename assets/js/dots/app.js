@@ -1,4 +1,5 @@
 import { loadStrategy, getStrategyKeys } from "./strategies/index.js";
+import { distanceSquared } from "./shared.js";
 
 const DOT_RADIUS = 3;
 
@@ -88,18 +89,18 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
         ctx.fill();
     }
 
-    function drawLinePairs(pairs, strokeStyle) {
-        if (!Array.isArray(pairs) || !pairs.length) {
+    function drawConnections(connections) {
+        if (!connections.length) {
             return;
         }
 
         ctx.save();
-        ctx.strokeStyle = strokeStyle;
+        ctx.strokeStyle = "rgba(234, 234, 234, 0.25)";
         ctx.lineWidth = 1;
 
-        pairs.forEach(pair => {
-            const source = dots[pair.sourceIndex];
-            const target = dots[pair.targetIndex];
+        connections.forEach(connection => {
+            const source = dots[connection.sourceIndex];
+            const target = dots[connection.targetIndex];
 
             if (!source || !target) {
                 return;
@@ -114,20 +115,70 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
         ctx.restore();
     }
 
-    function drawConnections(connections) {
-        drawLinePairs(connections, "rgba(234, 234, 234, 0.25)");
-    }
-
     function drawNeighborLinks(neighbors) {
-        drawLinePairs(neighbors, "rgba(234, 234, 234, 0.12)");
+        ctx.save();
+        ctx.strokeStyle = "rgba(234, 234, 234, 0.12)";
+        ctx.lineWidth = 1;
+
+        if (Array.isArray(neighbors) && neighbors.length) {
+            neighbors.forEach(pair => {
+                const source = dots[pair.sourceIndex];
+                const target = dots[pair.targetIndex];
+
+                if (!source || !target) return;
+
+                ctx.beginPath();
+                ctx.moveTo(source.x, source.y);
+                ctx.lineTo(target.x, target.y);
+                ctx.stroke();
+            });
+        } else {
+            // fallback: full pairwise scan using neighborDistance
+            const maxDistanceSquared = neighborDistance * neighborDistance;
+
+            for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
+                for (let targetIndex = sourceIndex + 1; targetIndex < dots.length; targetIndex++) {
+                    const distance = distanceSquared(dots[sourceIndex], dots[targetIndex]);
+
+                    if (distance > maxDistanceSquared) {
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(dots[sourceIndex].x, dots[sourceIndex].y);
+                    ctx.lineTo(dots[targetIndex].x, dots[targetIndex].y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        ctx.restore();
     }
 
     function drawDistanceChecks(checks) {
-        if (!showDistanceChecks) {
+        if (!showDistanceChecks || !checks.length) {
             return;
         }
 
-        drawLinePairs(checks, "rgba(255, 74, 74, 0.12)");
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 74, 74, 0.12)";
+        ctx.lineWidth = 1;
+
+        checks.forEach(check => {
+            const source = dots[check.sourceIndex];
+            const target = dots[check.targetIndex];
+
+            if (!source || !target) {
+                return;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(source.x, source.y);
+            ctx.lineTo(target.x, target.y);
+            ctx.stroke();
+        });
+
+        ctx.restore();
     }
 
     function drawOverlay() {
@@ -209,7 +260,6 @@ function createDotsApp({ canvas, strategyButtons, rightPanel }) {
         }
 
         selectedStrategyKey = strategyKey;
-        window.selectedDotStrategy = strategyKey;
         syncButtonState();
 
         activeStrategy = await loadStrategy(strategyKey);

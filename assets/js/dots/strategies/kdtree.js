@@ -1,18 +1,4 @@
-function distanceSquared(left, right) {
-    const deltaX = left.x - right.x;
-    const deltaY = left.y - right.y;
-    return deltaX * deltaX + deltaY * deltaY;
-}
-
-const MAX_CHECKS = 400;
-
-function recordCheck(checks, sourceIndex, targetIndex) {
-    if (checks.length >= MAX_CHECKS) {
-        checks.length = 0;
-    }
-
-    checks.push({ sourceIndex, targetIndex });
-}
+import { distanceSquared, pairFromKey, pairKey } from "../shared.js";
 
 function buildTree(points, depth = 0) {
     if (points.length === 0) {
@@ -31,38 +17,6 @@ function buildTree(points, depth = 0) {
     };
 }
 
-function searchNearest(node, targetPoint, targetIndex, best) {
-    if (!node) {
-        return best;
-    }
-
-    const nodePoint = node.point;
-
-    if (nodePoint.index !== targetIndex) {
-        const distance = distanceSquared(targetPoint, nodePoint);
-
-        if (distance < best.distance) {
-            best = {
-                index: nodePoint.index,
-                distance,
-            };
-        }
-    }
-
-    const axisKey = node.axis === 0 ? "x" : "y";
-    const targetValue = targetPoint[axisKey];
-    const nodeValue = nodePoint[axisKey];
-    const firstBranch = targetValue < nodeValue ? node.left : node.right;
-    const secondBranch = targetValue < nodeValue ? node.right : node.left;
-
-    best = searchNearest(firstBranch, targetPoint, targetIndex, best);
-
-    if ((targetValue - nodeValue) * (targetValue - nodeValue) < best.distance) {
-        best = searchNearest(secondBranch, targetPoint, targetIndex, best);
-    }
-
-    return best;
-}
 
 function getNearestConnections(dots, options = {}) {
     if (dots.length < 2) {
@@ -93,13 +47,11 @@ function getNearestConnections(dots, options = {}) {
 
         if (nodePoint.index !== targetIndex) {
             distanceChecks += 1;
-            recordCheck(checks, targetPoint.index, nodePoint.index);
+            checks.push({ sourceIndex: targetPoint.index, targetIndex: nodePoint.index });
             const distance = distanceSquared(targetPoint, nodePoint);
 
             if (distance <= maxDistanceSquared) {
-                const a = Math.min(targetIndex, nodePoint.index);
-                const b = Math.max(targetIndex, nodePoint.index);
-                neighborsSet.add(`${a}:${b}`);
+                neighborsSet.add(pairKey(targetIndex, nodePoint.index));
 
                 if (distance < best.distance) {
                     best = { index: nodePoint.index, distance };
@@ -134,10 +86,7 @@ function getNearestConnections(dots, options = {}) {
         }
     });
 
-    const neighbors = Array.from(neighborsSet).map(key => {
-        const [a, b] = key.split(":").map(Number);
-        return { sourceIndex: a, targetIndex: b };
-    });
+    const neighbors = Array.from(neighborsSet).map(pairFromKey);
 
     return {
         connections,

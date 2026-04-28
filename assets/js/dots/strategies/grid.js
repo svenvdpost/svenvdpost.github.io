@@ -1,4 +1,4 @@
-import { addNeighborPair, distanceSquared, recordCheck, toNeighborPairs } from "../strategy-utils.js";
+import { distanceSquared, pairFromKey, pairKey } from "../shared.js";
 
 function getCellKey(column, row) {
     return `${column}:${row}`;
@@ -60,9 +60,8 @@ function getNearestConnections(dots, options = {}) {
     const grid = buildGrid(dots, cellSize);
     const connections = [];
     const checks = [];
+    const neighborsSet = new Set();
     let distanceChecks = 0;
-    const neighborPairs = new Set();
-    const maxDistanceSquared = neighborDistance * neighborDistance;
 
     for (let sourceIndex = 0; sourceIndex < dots.length; sourceIndex++) {
         const source = dots[sourceIndex];
@@ -71,17 +70,16 @@ function getNearestConnections(dots, options = {}) {
         const candidateIndices = collectCandidateIndices(grid, column, row, searchRadius).filter(index => index !== sourceIndex);
         let bestTargetIndex = -1;
         let bestDistance = Number.POSITIVE_INFINITY;
-
         for (const targetIndex of candidateIndices) {
             distanceChecks += 1;
-            recordCheck(checks, sourceIndex, targetIndex);
+            checks.push({ sourceIndex, targetIndex });
             const distance = distanceSquared(source, dots[targetIndex]);
 
-            if (distance > maxDistanceSquared) {
+            if (distance > neighborDistance * neighborDistance) {
                 continue;
             }
 
-            addNeighborPair(neighborPairs, sourceIndex, targetIndex);
+            neighborsSet.add(pairKey(sourceIndex, targetIndex));
 
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -89,36 +87,12 @@ function getNearestConnections(dots, options = {}) {
             }
         }
 
-        if (bestTargetIndex === -1) {
-            for (let targetIndex = 0; targetIndex < dots.length; targetIndex++) {
-                if (sourceIndex === targetIndex) {
-                    continue;
-                }
-
-                distanceChecks += 1;
-                recordCheck(checks, sourceIndex, targetIndex);
-                const distance = distanceSquared(source, dots[targetIndex]);
-
-                if (distance > maxDistanceSquared) {
-                    continue;
-                }
-
-                addNeighborPair(neighborPairs, sourceIndex, targetIndex);
-
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    bestTargetIndex = targetIndex;
-                }
-            }
-        }
-
         if (bestTargetIndex !== -1) {
             connections.push({ sourceIndex, targetIndex: bestTargetIndex });
         }
-
     }
 
-    const neighbors = toNeighborPairs(neighborPairs);
+    const neighbors = Array.from(neighborsSet).map(pairFromKey);
 
     return {
         connections,
