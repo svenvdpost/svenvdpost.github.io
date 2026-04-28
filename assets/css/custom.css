@@ -53,6 +53,139 @@ header {
   padding: 2rem;
 }
 
+.dots-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 1rem;
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.dots-controls {
+  width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.dots-controls--left {
+  justify-self: end;
+}
+
+.dots-controls--right {
+  justify-self: start;
+  min-height: 1px;
+  justify-content: flex-start;
+}
+
+.dots-canvas-box {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+}
+
+.dots-canvas-box canvas {
+  display: block;
+  border: 2px solid #eaeaea;
+}
+
+.strategy-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.strategy-panel__info h2 {
+  margin: 0 0 0.5rem;
+}
+
+.strategy-panel__info p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.strategy-diagnostic {
+  border: 2px solid #eaeaea;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  background: #181818;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.strategy-diagnostic__label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa0a6;
+}
+
+.strategy-diagnostic__value {
+  font-size: 1rem;
+  color: #eaeaea;
+}
+
+.strategy-button {
+  appearance: none;
+  border: 2px solid #eaeaea;
+  background: #181818;
+  color: #eaeaea;
+  font: inherit;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.strategy-button:hover {
+  transform: translateX(2px);
+}
+
+.strategy-button.is-active {
+  background: #eaeaea;
+  color: #181818;
+}
+
+.strategy-button:focus-visible {
+  outline: 2px solid #eaeaea;
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .dots-layout {
+    width: min(100%, 500px);
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+  }
+
+  .dots-controls,
+  .dots-controls--left,
+  .dots-controls--right {
+    width: auto;
+    justify-self: stretch;
+  }
+
+  .dots-canvas-box {
+    justify-content: center;
+  }
+
+  .dots-layout > :nth-child(2) {
+    order: 1;
+  }
+
+  .dots-layout > :nth-child(1) {
+    order: 0;
+  }
+
+  .dots-layout > :nth-child(3) {
+    order: 2;
+  }
+}
+
 .annotation-list {
   list-style: none;
   margin: 0;
